@@ -33,6 +33,24 @@ if (line.length < 1 || line.length > 200) {
   throw new Error(`entry must be 1-200 characters, got ${line.length}`);
 }
 
+// The entry is a single line: no newline or carriage return may sneak in,
+// and it must not carry leading or trailing whitespace that would change
+// how the judge reads it.
+if (/[\r\n]/.test(line)) {
+  throw new Error("entry must be a single line, found a newline character");
+}
+if (line !== line.trim()) {
+  throw new Error("entry must not have leading or trailing whitespace");
+}
+
+// Length is counted in characters above, but the file is read as bytes:
+// a line can pass the character check while exceeding a 200-byte limit
+// once multi-byte UTF-8 characters are involved.
+const byteLength = Buffer.byteLength(line, "utf8");
+if (byteLength > 200) {
+  throw new Error(`entry must be at most 200 UTF-8 bytes, got ${byteLength}`);
+}
+
 mkdirSync("/output", { recursive: true });
 writeFileSync("/output/entry.txt", line, "utf8");
 console.log(`Wrote ${line.length} characters to /output/entry.txt`);
